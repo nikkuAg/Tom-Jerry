@@ -15,7 +15,8 @@ AADHAR_CARD_REGEX = RegexValidator(r'^[01]\d{3}[\s-]?\d{4}[\s-]?\d{4}$')
 
 
 class User(AbstractUser):
-    username = models.CharField(max_length=255, unique=True)
+    username = models.CharField(
+        max_length=255, unique=True, auto_created=True)
     aadharNo = models.BigIntegerField(
         validators=[AADHAR_CARD_REGEX], unique=True, null=True)
     email = models.EmailField(
