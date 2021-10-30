@@ -1,4 +1,4 @@
-from django.http.response import HttpResponse
+from django.http.response import HttpResponse, JsonResponse
 import requests
 from rest_framework import viewsets
 from .models import Address, User, Request_Sent, Request_Confirm, Audit
@@ -15,6 +15,7 @@ import os
 import io
 import xml.etree.ElementTree as ET
 import random
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 import random
 from .encryption_util import *
@@ -28,6 +29,8 @@ captchaTxnId = ""
 
 class UserViewSets(viewsets.ModelViewSet):
     serializer_class = UserSerializer
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         usr = encrypt("999964798565")
@@ -40,6 +43,7 @@ class SentViewSets(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     queryset = Request_Sent.objects.all()
     serializer_class = SentSerializer
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer, *args, **kargs):
         serializer.save(client=self.request.user)
@@ -49,6 +53,7 @@ class ConfirmViewSets(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     queryset = Request_Confirm.objects.all()
     serializer_class = ConfirmSerializer
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer, *args, **kargs):
         serializer.save(introducer=self.request.user)
@@ -58,6 +63,7 @@ class AuditViewSets(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     queryset = Audit.objects.all()
     serializer_class = AuditSerializer
+    permission_classes = [IsAuthenticated]
 
 
 def capchaViewset(request):
@@ -82,7 +88,7 @@ def capchaViewset(request):
     savepath = os.path.join('./captcha.png')
     img = Image.open(io.BytesIO(out))
     img.save(savepath)
-    return HttpResponse(base64_str)
+    return JsonResponse({"image": base64_str, "trxnId": captchaTxnId})
 
 
 def otpGeneratorViewset(request):
