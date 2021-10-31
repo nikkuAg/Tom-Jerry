@@ -23,7 +23,7 @@ from .encryption_util import *
 # Create your views here.
 
 otpTxnNumber = ""
-uid = "999988636660"
+uid = "999916184317"
 captchaTxnId = ""
 
 
@@ -115,7 +115,7 @@ def otpGeneratorViewset(request, capcha, id):
     print(response.json())
     if(response.json()['status'] == "Success"):
         otpTxnNumber = (response.json())['txnId']
-        return JsonResponse({'message': (response.json())["txnId"], 'status': "Success"})
+        return JsonResponse({'message': otpTxnNumber, 'status': "Success"})
     elif (response.json()['status'] == "Failure"):
         print("helo")
         return JsonResponse({'message': (response.json())["message"], 'status': "Failure"})
@@ -248,6 +248,6 @@ def eKYC(request, otp, id, uid):
                     address=address
                 )
 
-        return HttpResponse("done")
+        return JsonResponse({"message": "done"})
     else:
         return JsonResponse({"message": res.json()['errorDetails']['messageEnglish'], "test": "1"})
