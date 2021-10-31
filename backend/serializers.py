@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Request_Confirm, Request_Sent, Audit
+from .models import Address, User, Request_Confirm, Request_Sent, Audit
 from .encryption_util import *
 
 
@@ -51,10 +51,13 @@ class ConfirmSerializer(serializers.ModelSerializer):
     client_pk = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(), source='client'
     )
+    address_pk = serializers.PrimaryKeyRelatedField(
+        queryset=Address.objects.all(), source='address'
+    )
 
     class Meta:
         model = Request_Confirm
-        fields = '__all__'
+        fields = '_all_'
         depth = 1
 
 

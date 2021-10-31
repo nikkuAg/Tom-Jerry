@@ -21,6 +21,7 @@ from rest_framework.authtoken.models import Token
 import random
 from .encryption_util import *
 from .permissions import *
+from geopy.distance import geodesic
 # Create your views here.
 
 # otpTxnNumber = ""
@@ -65,6 +66,31 @@ class AuditViewSets(viewsets.ModelViewSet):
     queryset = Audit.objects.all()
     serializer_class = AuditSerializer
     permission_classes = [IsAuthenticated, AuditPermissions]
+
+
+class PasswordView(viewsets.ModelViewSet):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated, AuditPermissions]
+    serializer_class = ConfirmSerializer
+
+    def get_queryset(self):
+        print("hfhfh")
+        password = self.request.query_params.get('password')
+        print(password)
+        client = User.objects.get(id=self.request.user.id)
+        Req = Request_Confirm.objects.filter(client=client)
+        passwordattempt = Req[0].passAttempt
+        passwordattempt = passwordattempt+1
+        # return (password)
+        if(password == Req[0].password):
+            queryset = Req
+            print('confirm')
+            return queryset
+        else:
+            print('not confirm')
+            print(passwordattempt)
+            Req.update(passAttempt=(passwordattempt))
+            return None
 
 
 def capchaViewset(request):
@@ -257,3 +283,157 @@ def eKYC(request, otp, id, uid):
         return JsonResponse({"message": token.key, "id": thisUser, 'status': "Success"})
     else:
         return JsonResponse({"message": res.json()['errorDetails']['messageEnglish'], "status": "Fail"})
+
+
+def createUser(request, uid):
+    list = User.objects.all()
+    exist = None
+    for x in list:
+        if(decrypt(x.username) == uid):
+            exist = x.id
+            break
+
+    username = uid
+    address = None
+    if (exist == None):
+        address = Address.objects.create(
+            aadhar=encrypt(uid),
+            country=encrypt("N.A."),
+            district=encrypt("N.A."),
+            landmark=encrypt("N.A."),
+            house=encrypt("N.A."),
+            loc=encrypt("N.A."),
+            pc=encrypt("N.A."),
+            po=encrypt("N.A."),
+            state=encrypt("N.A."),
+            street=encrypt("N.A."),
+            subdistrict=encrypt("N.A."),
+            vtc=encrypt("N.A.")
+        )
+        User.objects.create(
+            username=encrypt(username),
+            # email=email,
+            # phone=phone,
+            # lastModified=lastModified,
+            name=encrypt("N.A."),
+            address=address
+        )
+    if (exist == None):
+        return HttpResponse(list[list.count()-1].id)
+    else:
+        return HttpResponse(exist)
+
+
+def sentRequest(request, clientId, introducerId):
+    users = Request_Sent.objects.filter(client=User.objects.get(id=clientId))
+    already = False
+    for user in users:
+        already
+        if user.status == '':
+            already = True
+            break
+
+    if(not already):
+        Request_Sent.objects.create(
+            client=User.objects.get(id=int(clientId)),
+            introducer=User.objects.get(id=int(introducerId)),
+        )
+
+        return HttpResponse("Your Request has been sent!!")
+    else:
+        return HttpResponse("You have sent one request already!!")
+
+
+def geoLocation(request, loc, po, pin, city, lat, lng):
+    loc = loc
+    city = city
+    lat_gps = lat
+    lng_gps = lng
+    pincode_address = pin
+    cordinate_gps = lat_gps+" , "+lng_gps
+    postoffice = po
+    client = User.objects.get(id=request.user.id)
+    reqID = Request_Confirm.objects.filter(client=client)
+    print(reqID)
+    address = reqID[0].addressAttempt
+    if(address < 5):
+        if(loc != ""):
+            # return HttpResponse("hi")
+            address = loc+" , "+city
+
+            data = requests.get('https://api.opencagedata.com/geocode/v1/json?q=' +
+                                address+'&key=3a8206377b6e4887bcbc6b1d35120045')
+            data = data.json()
+
+            lat = str(data['results'][0]['geometry']['lat'])
+            lng = str(data['results'][0]['geometry']['lng'])
+            # return(HttpResponse(lat))
+            cordinate_address = lat + ' , ' + lng
+            distance = geodesic(cordinate_gps, cordinate_address).km
+            distance = distance
+            # return HttpResponse(request.user.id)
+            client = User.objects.get(id=request.user.id)
+            reqID = Request_Confirm.objects.filter(client=client)
+            print(distance)
+            address = reqID[0].addressAttempt
+            print(address)
+
+            if(distance < 5):
+                reqID = reqID.update(addressAttempt=(address+1))
+                return HttpResponse("sucess")
+            elif(distance < 10):
+                reqID = reqID.update(addressAttempt=(address+1))
+                cord = lat_gps+"%2C"+lng_gps
+                data = requests.get(
+                    'https://api.opencagedata.com/geocode/v1/json?q='+cord+'&key=3a8206377b6e4887bcbc6b1d35120045')
+                data = data.json()
+                pincode_gps = str(data['results'][0]['components']['postcode'])
+                if(pincode_address == pincode_gps):
+                    return HttpResponse("sucess with warning")
+                else:
+                    return HttpResponse('faliure')
+            else:
+                return HttpResponse("failed1")
+
+        elif(postoffice != ""):
+            address = postoffice+" , "+city
+
+            data = requests.get('https://api.opencagedata.com/geocode/v1/json?q=' +
+                                address+'&key=3a8206377b6e4887bcbc6b1d35120045')
+            data = data.json()
+
+            lat = str(data['results'][0]['geometry']['lat'])
+            lng = str(data['results'][0]['geometry']['lng'])
+
+            cordinate_address = lat + ' , ' + lng
+            distance = geodesic(cordinate_gps, cordinate_address).km
+            distance = distance
+            client = User.objects.get(id=request.user.id)
+            reqID = Request_Confirm.objects.filter(client=client)
+            print(distance)
+            address = reqID[0].addressAttempt
+
+            if(distance < 5):
+                return HttpResponse("sucess")
+            elif(distance < 10):
+                cord = lat_gps+"%2C"+lng_gps
+                data = requests.get(
+                    'https://api.opencagedata.com/geocode/v1/json?q='+cord+'&key=3a8206377b6e4887bcbc6b1d35120045')
+                data = data.json()
+                pincode_gps = str(data['results'][0]['components']['postcode'])
+                if(pincode_address == pincode_gps):
+                    return HttpResponse("sucess with warning")
+                else:
+                    return HttpResponse('faliure')
+            else:
+                reqID = reqID.update(addressAttempt=(address+1))
+                return HttpResponse("failed2")
+
+        else:
+            client = User.objects.get(id=request.user.id)
+            reqID = Request_Confirm.objects.filter(client=client)
+            address = reqID[0].addressAttempt
+            reqID = reqID.update(addressAttempt=(address+1))
+            return HttpResponse("adress not qualified")
+    else:
+        return HttpResponse("adress exceed")

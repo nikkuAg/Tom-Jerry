@@ -8,6 +8,8 @@ Django==3.2.8
 django-cors-headers==3.10.0
 django-filter==21.1
 djangorestframework==3.12.4
+geographiclib==1.52
+geopy==2.2.0
 idna==3.3
 Markdown==3.3.4
 mysqlclient==2.0.3
