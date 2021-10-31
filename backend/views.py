@@ -250,8 +250,10 @@ def eKYC(request, otp, id, uid):
         if(exist == None):
             users = User.objects.all()
             token = Token.objects.get(user=users[users.count()-1])
+            thisUser = users[users.count()-1].id
         else:
             token = Token.objects.get(user=User.objects.get(id=exist))
-        return JsonResponse({"message": token.key, 'status': "Success"})
+            thisUser = exist
+        return JsonResponse({"message": token.key, "id": thisUser, 'status': "Success"})
     else:
         return JsonResponse({"message": res.json()['errorDetails']['messageEnglish'], "status": "Fail"})

@@ -8,9 +8,9 @@ class UserSerializer(serializers.ModelSerializer):
         return {
             'id': obj.id,
             'username': decrypt(obj.username),
-            'email': decrypt(obj.email),
-            'phone': decrypt(obj.phone),
-            'lastModified': obj.lastModified,
+            # 'email': decrypt(obj.email),
+            # 'phone': decrypt(obj.phone),
+            # 'lastModified': obj.lastModified,
             'name': decrypt(obj.name),
             'aadhar': decrypt(obj.address.aadhar),
             'country': decrypt(obj.address.country),
