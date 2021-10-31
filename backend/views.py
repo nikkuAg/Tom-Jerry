@@ -2,7 +2,7 @@ from django.http.response import HttpResponse, JsonResponse
 import requests
 from rest_framework import viewsets
 from .models import Address, User, Request_Sent, Request_Confirm, Audit
-from .serializers import UserSerializer, SentSerializer, ConfirmSerializer, AuditSerializer
+from .serializers import PasswordSearilizer, UserSerializer, SentSerializer, ConfirmSerializer, AuditSerializer
 import requests
 import json
 import base64
@@ -71,7 +71,7 @@ class AuditViewSets(viewsets.ModelViewSet):
 class PasswordView(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated, AuditPermissions]
-    serializer_class = ConfirmSerializer
+    serializer_class = PasswordSearilizer
 
     def get_queryset(self):
         print("hfhfh")
@@ -329,7 +329,7 @@ def sentRequest(request, clientId, introducerId):
     already = False
     for user in users:
         already
-        if user.status == '':
+        if user.status == 'empty':
             already = True
             break
 

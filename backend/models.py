@@ -60,7 +60,7 @@ class Request_Sent(models.Model):
         to=User, on_delete=CASCADE, related_name='client2')
     introducer = models.ForeignKey(
         to=User, on_delete=CASCADE, related_name="introducer2")
-    status = models.CharField(max_length=255, default="", null=True,)
+    status = models.CharField(max_length=255, default="empty", null=True,)
 
 
 class Request_Confirm(models.Model):

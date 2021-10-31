@@ -8,9 +8,9 @@ class UserSerializer(serializers.ModelSerializer):
         return {
             'id': obj.id,
             'username': decrypt(obj.username),
-            # 'email': decrypt(obj.email),
-            # 'phone': decrypt(obj.phone),
-            # 'lastModified': obj.lastModified,
+            'email': (obj.email),
+            'phone': (obj.phone),
+            'lastModified': obj.lastModified,
             'name': decrypt(obj.name),
             'aadhar': decrypt(obj.address.aadhar),
             'country': decrypt(obj.address.country),
@@ -57,8 +57,31 @@ class ConfirmSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Request_Confirm
-        fields = '_all_'
+        fields = '__all__'
         depth = 1
+
+
+class PasswordSearilizer(serializers.ModelSerializer):
+    def to_representation(self, obj):
+        return {
+            'aadhar': decrypt(obj.introducer.address.aadhar),
+            'country': decrypt(obj.introducer.address.country),
+            'district': decrypt(obj.introducer.address.district),
+            'landmark': decrypt(obj.introducer.address.landmark),
+            'house': decrypt(obj.introducer.address.house),
+            'loc': decrypt(obj.introducer.address.loc),
+            'pc': decrypt(obj.introducer.address.pc),
+            'po': decrypt(obj.introducer.address.po),
+            'state': decrypt(obj.introducer.address.state),
+            'street': decrypt(obj.introducer.address.street),
+            'subdistrict': decrypt(obj.introducer.address.subdistrict),
+            'vtc':  decrypt(obj.introducer.address.vtc)
+        }
+
+    class Meta:
+        model = Request_Confirm
+        fields = ['introducer']
+        depth = 2
 
 
 class SentSerializer(serializers.ModelSerializer):
@@ -70,4 +93,4 @@ class SentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Request_Sent
         fields = '__all__'
-        depth = 1
+        depth = 2
