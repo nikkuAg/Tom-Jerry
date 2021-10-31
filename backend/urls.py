@@ -11,6 +11,6 @@ router.register(r'audit', AuditViewSets)
 urlpatterns = [
     path('', include(router.urls)),
     path('capcha/', capchaViewset),
-    path('otp/<str:capcha>/<str:id>', otpGeneratorViewset),
+    path('otp/<str:capcha>/<str:id>/<str:uid>', otpGeneratorViewset),
     path('kyc/<str:otp>/<str:id>/<str:uid>', eKYC)
 ]

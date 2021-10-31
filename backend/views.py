@@ -17,14 +17,15 @@ import xml.etree.ElementTree as ET
 import random
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework.authtoken.models import Token
 import random
 from .encryption_util import *
 
 # Create your views here.
 
-otpTxnNumber = ""
-uid = "999916184317"
-captchaTxnId = ""
+# otpTxnNumber = ""
+# uid = "999916184317"
+# captchaTxnId = ""
 
 
 class UserViewSets(viewsets.ModelViewSet):
@@ -67,7 +68,7 @@ class AuditViewSets(viewsets.ModelViewSet):
 
 
 def capchaViewset(request):
-    global captchaTxnId
+    # global captchaTxnId
     captcha_url = "https://stage1.uidai.gov.in/unifiedAppAuthService/api/v2/get/captcha"
     data = {
         "langCode": "en",
@@ -91,7 +92,7 @@ def capchaViewset(request):
     return JsonResponse({"image": base64_str, "trxnId": captchaTxnId})
 
 
-def otpGeneratorViewset(request, capcha, id):
+def otpGeneratorViewset(request, capcha, id, uid):
     """"
     if captcha is invalid
     {'httpStatus': 'OK', 'message': 'Invalid Captcha', 'code': 400, 'transactionId': 'f7f600ab-592d-48dd-9c2f-513517f86872:MOBILE_NO',
@@ -111,7 +112,7 @@ def otpGeneratorViewset(request, capcha, id):
     }
     response = requests.post(otp_url, data=json.dumps(data),
                              headers=headers, verify=True)
-    global otpTxnNumber
+    # global otpTxnNumber
     print(response.json())
     if(response.json()['status'] == "Success"):
         otpTxnNumber = (response.json())['txnId']
@@ -247,7 +248,11 @@ def eKYC(request, otp, id, uid):
                     name=encrypt(name),
                     address=address
                 )
-
-        return JsonResponse({"message": "done"})
+        if(exist == None):
+            users = User.objects.all()
+            token = Token.objects.get(user=users[users.count()-1])
+        else:
+            token = Token.objects.get(user=User.objects.get(id=exist))
+        return JsonResponse({"message": token.key, 'status': "Success"})
     else:
-        return JsonResponse({"message": res.json()['errorDetails']['messageEnglish'], "test": "1"})
+        return JsonResponse({"message": res.json()['errorDetails']['messageEnglish'], "status": "Fail"})

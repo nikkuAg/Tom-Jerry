@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
-from django.db.models.deletion import CASCADE
+from django.db.models.deletion import CASCADE, PROTECT
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
@@ -38,7 +38,7 @@ class User(AbstractUser):
     lastModified = models.DateTimeField(null=True, blank=True)
     name = models.CharField(max_length=500)
     address = models.ForeignKey(
-        to=Address, on_delete=CASCADE, blank=True, null=True)
+        to=Address, on_delete=PROTECT, blank=True, null=True)
     REQUIRED_FIELDS = ["name"]
 
     def __str__(self):
