@@ -2,11 +2,12 @@ from django.http.response import HttpResponse, JsonResponse
 import requests
 from rest_framework import views, viewsets, mixins
 from .models import Address, User, Request_Sent, Request_Confirm, Audit
-from .serializers import UserSerializer, SentSerializer, ConfirmSerializer, AuditSerializer, ClientSentSerializer
+from .serializers import PasswordSearilizer, UserSerializer, SentSerializer, ConfirmSerializer, AuditSerializer, ClientSentSerializer, IntroduceSentSerializer
 import requests
 import json
 import base64
 import uuid
+import datetime
 from PIL import Image
 import zipfile36 as zipfile
 from zipfile import ZipFile
@@ -17,7 +18,9 @@ import xml.etree.ElementTree as ET
 import random
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.authtoken.models import Token
+from rest_framework.views import Response
 import random
 from .encryption_util import *
 from .permissions import *
@@ -49,10 +52,37 @@ class SentViewSets(viewsets.ModelViewSet):
     def perform_create(self, serializer, *args, **kargs):
         serializer.save(client=self.request.user)
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        print("request data in update", request.data)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        print("serializer was not valid")
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def perform_update(self, serializer):
+        print("request data", self.request.data)
+        serializer.save()
+
 
 class ClientSentViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixin):
     queryset = User.objects.all()
     serializer_class = ClientSentSerializer
+    permission_classes = [IsAuthenticated, ClientSentPermission]
+
+
+class IntroducerSentViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixin):
+    queryset = User.objects.all()
+    serializer_class = IntroduceSentSerializer
     permission_classes = [IsAuthenticated, ClientSentPermission]
 
 
@@ -131,6 +161,189 @@ def otpGeneratorViewset(request, capcha, id, uid):
     # except:
     #     raise Exception("Invalid Captcha")
     # return HttpResponse((response.json())["txnId"])
+
+
+class PasswordView(viewsets.ModelViewSet):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = PasswordSearilizer
+
+    def get_queryset(self):
+        print("hfhfh")
+        password = self.request.query_params.get('password')
+        print(password)
+        client = User.objects.get(id=self.request.user.id)
+        print(client.id)
+        Req = Request_Confirm.objects.get(client=client)
+
+        print(Req)
+        passwordattempt = Req[0].passAttempt
+        passwordattempt = passwordattempt+1
+        # return (password)
+
+        if(password == Req[0].password):
+            queryset = Req
+            print('confirm')
+            return queryset
+        else:
+            print('not confirm')
+            print(passwordattempt)
+            Req.update(passAttempt=(passwordattempt))
+            return None
+
+
+def createUser(request, uid):
+    list = User.objects.all()
+    exist = None
+    for x in list:
+        if(decrypt(x.username) == uid):
+            exist = x.id
+            break
+
+    username = uid
+    address = None
+    if (exist == None):
+        address = Address.objects.create(
+            aadhar=encrypt(uid),
+            country=encrypt("N.A."),
+            district=encrypt("N.A."),
+            landmark=encrypt("N.A."),
+            house=encrypt("N.A."),
+            loc=encrypt("N.A."),
+            pc=encrypt("N.A."),
+            po=encrypt("N.A."),
+            state=encrypt("N.A."),
+            street=encrypt("N.A."),
+            subdistrict=encrypt("N.A."),
+            vtc=encrypt("N.A.")
+        )
+        User.objects.create(
+            username=encrypt(username),
+            # email=email,
+            # phone=phone,
+            # lastModified=lastModified,
+            name=encrypt("N.A."),
+            address=address
+        )
+    if (exist == None):
+        return HttpResponse(list[list.count()-1].id)
+    else:
+        return HttpResponse(exist)
+
+
+def sentRequest(request, clientId, introducerId):
+    users = Request_Sent.objects.filter(client=User.objects.get(id=clientId))
+    already = False
+    for user in users:
+        already
+        if user.status == 'empty':
+            already = True
+            break
+
+    if(not already):
+        for req in Request_Sent.objects.all():
+            if req.status == 'declined':
+                Request_Sent.objects.get(id=req.id).delete()
+        Request_Sent.objects.create(
+            client=User.objects.get(id=int(clientId)),
+            introducer=User.objects.get(id=int(introducerId)),
+        )
+
+        return HttpResponse("Your Request has been sent!!")
+    else:
+        return HttpResponse("You have sent one request already!!")
+
+
+def geoLocation(request, loc, po, pin, city, lat, lng):
+    lat_gps = lat
+    lng_gps = lng
+    pincode_address = pin
+    cordinate_gps = lat_gps+" , "+lng_gps
+    postoffice = po
+    client = User.objects.get(id=request.user.id)
+    reqID = Request_Confirm.objects.filter(client=client)
+    address = reqID[0].addressAttempt
+    if(address < 5):
+        if(loc != ""):
+            # return HttpResponse("hi")
+            address = loc+" , "+city
+
+            data = requests.get('https://api.opencagedata.com/geocode/v1/json?q=' +
+                                address+'&key=3a8206377b6e4887bcbc6b1d35120045')
+            data = data.json()
+
+            lat = str(data['results'][0]['geometry']['lat'])
+            lng = str(data['results'][0]['geometry']['lng'])
+            # return(HttpResponse(lat))
+            cordinate_address = lat + ' , ' + lng
+            distance = geodesic(cordinate_gps, cordinate_address).km
+            distance = distance
+            # return HttpResponse(request.user.id)
+            client = User.objects.get(id=request.user.id)
+            reqID = Request_Confirm.objects.filter(client=client)
+            print(distance)
+            address = reqID[0].addressAttempt
+            print(address)
+
+            if(distance < 5):
+                reqID = reqID.update(addressAttempt=(address+1))
+                return HttpResponse("sucess")
+            elif(distance < 10):
+                reqID = reqID.update(addressAttempt=(address+1))
+                cord = lat_gps+"%2C"+lng_gps
+                data = requests.get(
+                    'https://api.opencagedata.com/geocode/v1/json?q='+cord+'&key=3a8206377b6e4887bcbc6b1d35120045')
+                data = data.json()
+                pincode_gps = str(data['results'][0]['components']['postcode'])
+                if(pincode_address == pincode_gps):
+                    return HttpResponse("sucess with warning")
+                else:
+                    return HttpResponse('faliure')
+            else:
+                return HttpResponse("failed1")
+
+        elif(postoffice != ""):
+            address = postoffice+" , "+city
+
+            data = requests.get('https://api.opencagedata.com/geocode/v1/json?q=' +
+                                address+'&key=3a8206377b6e4887bcbc6b1d35120045')
+            data = data.json()
+
+            lat = str(data['results'][0]['geometry']['lat'])
+            lng = str(data['results'][0]['geometry']['lng'])
+
+            cordinate_address = lat + ' , ' + lng
+            distance = geodesic(cordinate_gps, cordinate_address).km
+            distance = distance
+            client = User.objects.get(id=request.user.id)
+            reqID = Request_Confirm.objects.filter(client=client)
+            print(distance)
+            address = reqID[0].addressAttempt
+
+            if(distance < 5):
+                return HttpResponse("sucess")
+            elif(distance < 10):
+                cord = lat_gps+"%2C"+lng_gps
+                data = requests.get(
+                    'https://api.opencagedata.com/geocode/v1/json?q='+cord+'&key=3a8206377b6e4887bcbc6b1d35120045')
+                data = data.json()
+                pincode_gps = str(data['results'][0]['components']['postcode'])
+                if(pincode_address == pincode_gps):
+                    return HttpResponse("sucess with warning")
+                else:
+                    return HttpResponse('faliure')
+            else:
+                reqID = reqID.update(addressAttempt=(address+1))
+                return HttpResponse("failed2")
+
+        else:
+            client = User.objects.get(id=request.user.id)
+            reqID = Request_Confirm.objects.filter(client=client)
+            address = reqID[0].addressAttempt
+            reqID = reqID.update(addressAttempt=(address+1))
+            return HttpResponse("adress not qualified")
+    else:
+        return HttpResponse("adress exceed")
 
 
 def eKYC(request, otp, id, uid):
@@ -263,3 +476,20 @@ def eKYC(request, otp, id, uid):
         return JsonResponse({"message": token.key, "id": thisUser, 'status': "Success"})
     else:
         return JsonResponse({"message": res.json()['errorDetails']['messageEnglish'], "status": "Fail"})
+
+
+@api_view(("GET", ))
+def check_pending_status(request):
+    requests = Request_Sent.objects.all()
+    for req in requests:
+        if req.client.username == decrypt(request.user.username):
+            return JsonResponse({"pending_status": True})
+    now = datetime.datetime.now()
+    if request.user.lastModified is not None:
+        diff = now - request.user.lastModified
+        if diff.days > 90:
+            return JsonResponse({"pending_status": False})
+        else:
+            return JsonResponse({"pending_status": True})
+    # assuming the modified status from aadhar in future would return False True initially
+    return JsonResponse({"pending_status": False})

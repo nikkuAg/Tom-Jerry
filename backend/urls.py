@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import UserViewSets, SentViewSets, ConfirmViewSets, AuditViewSets, ClientSentViewSet, capchaViewset, eKYC, otpGeneratorViewset
-from .views import PasswordView, UserViewSets, SentViewSets, ConfirmViewSets, AuditViewSets, capchaViewset, eKYC, geoLocation, otpGeneratorViewset, createUser, sentRequest
+from .views import PasswordView, UserViewSets, SentViewSets, ConfirmViewSets, AuditViewSets, IntroducerSentViewSet, capchaViewset, eKYC, geoLocation, otpGeneratorViewset, createUser, sentRequest, check_pending_status
 
 router = DefaultRouter()
 router.register(r'users', UserViewSets, basename="userdata")
@@ -9,6 +9,7 @@ router.register(r'sent', SentViewSets)
 router.register(r'confirm', ConfirmViewSets)
 router.register(r'audit', AuditViewSets)
 router.register(r'user_request', ClientSentViewSet)
+router.register(r'introducer_request', IntroducerSentViewSet)
 router.register(r'validate/password', PasswordView, basename="password")
 
 urlpatterns = [
@@ -18,6 +19,7 @@ urlpatterns = [
     path('kyc/<str:otp>/<str:id>/<str:uid>', eKYC),
     path('geolocaion/<str:loc>/<str:po>/<str:pin>/<str:city>/<str:lat>/<str:lng>', geoLocation),
     path('create/<str:uid>', createUser),
-    path('sent/<str:clientId>/<str:introducerId>', sentRequest)
+    path('sent/<str:clientId>/<str:introducerId>', sentRequest),
+    path('pending', check_pending_status)
 
 ]
