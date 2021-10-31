@@ -4,3 +4,5 @@ Lib/*
 Scripts/*
 UIDAI/__pycache__/
 backend/__pycache__/
+backend/migrations/__pycache__/*
+pyvenv.cfg
