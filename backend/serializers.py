@@ -14,6 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
             'name': decrypt(obj.name),
             'aadhar': decrypt(obj.address.aadhar),
             'address': {
+                'id': obj.address.id,
                 'country': decrypt(obj.address.country),
                 'district': decrypt(obj.address.district),
                 'landmark': decrypt(obj.address.landmark),
@@ -98,6 +99,48 @@ class SentSerializer(serializers.ModelSerializer):
         depth = 1
 
 
+class SentSerializer(serializers.ModelSerializer):
+
+    def to_representation(self, obj):
+        return {
+            'id': obj.id,
+            'introducer_name': decrypt(obj.introducer.name),
+            'introducer_aadhar': decrypt(obj.introducer.username),
+            'client_id': obj.client.id,
+            'client_name': decrypt(obj.client.name),
+            'client_aadhar': decrypt(obj.client.username),
+            'status': obj.status
+        }
+
+    class Meta:
+        model = Request_Sent
+        fields = '__all__'
+        # depth = 1
+
+
+class ConfirmSerializer(serializers.ModelSerializer):
+    client_pk = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), source='client'
+    )
+    address_pk = serializers.PrimaryKeyRelatedField(
+        queryset=Address.objects.all(), source='address'
+    )
+
+    def to_representation(self, obj):
+        return {
+            'client_name': decrypt(obj.client.name),
+            'clientId': decrypt(obj.client.username),
+            'introducer_name': decrypt(obj.introducer.name),
+            'intorducerId': decrypt(obj.introducer.username),
+            'status': obj.status
+        }
+
+    class Meta:
+        model = Request_Confirm
+        fields = '__all__'
+        depth = 1
+
+
 class ClientSentSerializer(serializers.ModelSerializer):
     request_client = SentSerializer(read_only=True, many=True)
 
@@ -105,4 +148,12 @@ class ClientSentSerializer(serializers.ModelSerializer):
         model = User
         fields = ['request_client']
 
+
+class IntroduceSentSerializer(serializers.ModelSerializer):
+
+    request_introducer = SentSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = User
+        fields = ['request_introducer']
     # phone number and email

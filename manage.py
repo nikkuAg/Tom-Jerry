@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
+import pymysql
 import os
 import sys
 
 "Use This for Windows"
-# import pymysql
-# pymysql.install_as_MySQLdb()
+pymysql.install_as_MySQLdb()
 
 
 def main():
