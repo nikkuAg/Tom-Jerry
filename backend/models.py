@@ -38,7 +38,7 @@ class User(AbstractUser):
     lastModified = models.DateTimeField(null=True, blank=True)
     name = models.CharField(max_length=500, null=True)
     address = models.ForeignKey(
-        to=Address, on_delete=PROTECT, blank=True, null=True)
+        to=Address, on_delete=models.PROTECT, blank=True, null=True)
     REQUIRED_FIELDS = ["name"]
 
     def __str__(self):
@@ -57,10 +57,10 @@ class Audit(models.Model):
 
 class Request_Sent(models.Model):
     client = models.ForeignKey(
-        to=User, on_delete=CASCADE, related_name='client2')
+        to=User, on_delete=CASCADE, related_name='request_client')
     introducer = models.ForeignKey(
-        to=User, on_delete=CASCADE, related_name="introducer2")
-    status = models.CharField(max_length=255, default="empty", null=True,)
+        to=User, on_delete=CASCADE, related_name="request_introducer")
+    status = models.CharField(default="empty", max_length=10)
 
 
 class Request_Confirm(models.Model):
