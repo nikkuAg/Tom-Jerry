@@ -1,4 +1,6 @@
 UIDAI/config.py
-
+Include/*
+Lib/*
+Scripts/*
 UIDAI/__pycache__/
 backend/__pycache__/
