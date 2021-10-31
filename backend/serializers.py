@@ -13,17 +13,19 @@ class UserSerializer(serializers.ModelSerializer):
             'lastModified': obj.lastModified,
             'name': decrypt(obj.name),
             'aadhar': decrypt(obj.address.aadhar),
-            'country': decrypt(obj.address.country),
-            'district': decrypt(obj.address.district),
-            'landmark': decrypt(obj.address.landmark),
-            'house': decrypt(obj.address.house),
-            'loc': decrypt(obj.address.loc),
-            'pc': decrypt(obj.address.pc),
-            'po': decrypt(obj.address.po),
-            'state': decrypt(obj.address.state),
-            'street': decrypt(obj.address.street),
-            'subdistrict': decrypt(obj.address.subdistrict),
-            'vtc':  decrypt(obj.address.vtc)
+            'address': {
+                'country': decrypt(obj.address.country),
+                'district': decrypt(obj.address.district),
+                'landmark': decrypt(obj.address.landmark),
+                'house': decrypt(obj.address.house),
+                'loc': decrypt(obj.address.loc),
+                'pc': decrypt(obj.address.pc),
+                'po': decrypt(obj.address.po),
+                'state': decrypt(obj.address.state),
+                'street': decrypt(obj.address.street),
+                'subdistrict': decrypt(obj.address.subdistrict),
+                'vtc':  decrypt(obj.address.vtc)
+            }
         }
 
     class Meta:
@@ -68,3 +70,13 @@ class SentSerializer(serializers.ModelSerializer):
         model = Request_Sent
         fields = '__all__'
         depth = 1
+
+
+class ClientSentSerializer(serializers.ModelSerializer):
+    request_client = SentSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = User
+        fields = ['request_client']
+
+    # phone number and email
