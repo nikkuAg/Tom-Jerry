@@ -20,7 +20,7 @@ from rest_framework.authentication import SessionAuthentication, TokenAuthentica
 from rest_framework.authtoken.models import Token
 import random
 from .encryption_util import *
-
+from .permissions import *
 # Create your views here.
 
 # otpTxnNumber = ""
@@ -44,7 +44,7 @@ class SentViewSets(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     queryset = Request_Sent.objects.all()
     serializer_class = SentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, SentReceivePermissions]
 
     def perform_create(self, serializer, *args, **kargs):
         serializer.save(client=self.request.user)
@@ -54,7 +54,7 @@ class ConfirmViewSets(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     queryset = Request_Confirm.objects.all()
     serializer_class = ConfirmSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, SentReceivePermissions]
 
     def perform_create(self, serializer, *args, **kargs):
         serializer.save(introducer=self.request.user)
@@ -64,7 +64,7 @@ class AuditViewSets(viewsets.ModelViewSet):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     queryset = Audit.objects.all()
     serializer_class = AuditSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, AuditPermissions]
 
 
 def capchaViewset(request):
@@ -182,7 +182,6 @@ def eKYC(request, otp, id, uid):
             list = User.objects.all()
             exist = None
             for x in list:
-                exist
                 if(decrypt(x.username) == uid):
                     exist = x.id
                     break
